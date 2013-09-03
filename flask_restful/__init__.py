@@ -381,11 +381,14 @@ def marshal(data, fields):
     if isinstance(data, (list, tuple)):
         return [marshal(d, fields) for d in data]
 
-    items = ((k, marshal(data, v) if isinstance(v, dict)
-                                  else make(v).output(k, data))
-                                  for k, v in fields.items())
-    return OrderedDict(items)
-
+    items = OrderedDict()
+    for k, v in fields.items():
+        tmp = marshal(data, v) if isinstance(v, dict)\
+                               else make(v).output(k, data)
+        if tmp != None and\
+           not((isinstance(tmp, list) or isinstance(tmp, unicode)) and len(tmp)==0):
+            items[k] = tmp
+    return items
 
 class marshal_with(object):
     """A decorator that apply marshalling to the return values of your methods.
