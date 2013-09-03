@@ -17,7 +17,7 @@ setup(
     setup_requires=[
         'nose>=1.1.2',
         'mock>=0.8',
-        'six>=1.3.0',
+        'six>=1.1.0',
         'blinker==1.2',
     ],
     install_requires=[
