@@ -155,10 +155,8 @@ class List(Raw):
             # Convert all instances in typed list to container type
             return [self.container.output(idx, value) for idx, val
                     in enumerate(value)]
-
         if value is None:
             return self.default
-
         return [marshal(value, self.container.nested)]
 
 
@@ -226,7 +224,7 @@ class Float(Raw):
 
     def format(self, value):
         try:
-            return repr(float(value))
+            return float(value)
         except ValueError as ve:
             raise MarshallingException(ve)
 
