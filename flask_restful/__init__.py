@@ -356,7 +356,7 @@ class Resource(MethodView):
         return resp
 
 
-def marshal(data, fields):
+def marshal(data, fields, allow_null=True):
     """Takes raw data (in the form of a dict, list, object) and a dict of
     fields to output and filters the data based on those fields.
 
@@ -381,9 +381,12 @@ def marshal(data, fields):
     if isinstance(data, (list, tuple)):
         return [marshal(d, fields) for d in data]
 
-    items = ((k, marshal(data, v) if isinstance(v, dict)
-                                  else make(v).output(k, data))
-                                  for k, v in fields.items())
+    items = []
+    for k, v in fields.items():
+        tmp = marshal(data, v, allow_null) if isinstance(v, dict)\
+                               else make(v).output(k, data)
+        if allow_null or not(tmp is None):
+            items.append((k, tmp))
     return OrderedDict(items)
 
 
@@ -402,10 +405,11 @@ class marshal_with(object):
 
     see :meth:`flask.ext.restful.marshal`
     """
-    def __init__(self, fields):
+    def __init__(self, fields, allow_null=True):
         """:param fields: a dict of whose keys will make up the final
                           serialized response output"""
         self.fields = fields
+        self.allow_null = allow_null
 
     def __call__(self, f):
         @wraps(f)
@@ -413,7 +417,7 @@ class marshal_with(object):
             resp = f(*args, **kwargs)
             if isinstance(resp, tuple):
                 data, code, headers = unpack(resp)
-                return marshal(data, self.fields), code, headers
+                return marshal(data, self.fields, self.allow_null), code, headers
             else:
-                return marshal(resp, self.fields)
+                return marshal(resp, self.fields, self.allow_null)
         return wrapper
