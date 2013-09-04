@@ -10,7 +10,7 @@ from flask_restful import types, marshal
 from flask import url_for
 
 __all__ = ["String", "FormattedString", "Url", "DateTime", "Float",
-           "Integer", "Arbitrary", "Nested", "List", "Raw", "get_value"]
+           "Integer", "Arbitrary", "Nested", "List", "Raw"]
 
 
 class MarshallingException(Exception):
@@ -117,24 +117,25 @@ class Nested(Raw):
     :param dict nested: The dictionary to nest
     :param bool allow_null: Whether to return None instead of a dictionary
         with null keys, if a nested dictionary has all-null keys
+    :param bool display: Params pass to marshal to display null object or not
     """
 
-    def __init__(self, nested, allow_null=False, **kwargs):
+    def __init__(self, nested, allow_null=False, display_null=True, **kwargs):
         self.nested = nested
         self.allow_null = allow_null
+        self.display_null = display_null
         super(Nested, self).__init__(**kwargs)
 
     def output(self, key, obj):
         value = get_value(key if self.attribute is None else self.attribute, obj)
         if self.allow_null and value is None:
             return None
-
-        return marshal(value, self.nested)
-
+        return marshal(value, self.nested, self.display_null)
 
 class List(Raw):
-    def __init__(self, cls_or_instance, **kwargs):
+    def __init__(self, cls_or_instance, display_empty=True, **kwargs):
         super(List, self).__init__(**kwargs)
+        self.display_empty = display_empty
         if isinstance(cls_or_instance, type):
             if not issubclass(cls_or_instance, Raw):
                 raise MarshallingException("The type of the list elements "
@@ -153,11 +154,14 @@ class List(Raw):
         # we cannot really test for external dict behavior
         if is_indexable_but_not_string(value) and not isinstance(value, dict):
             # Convert all instances in typed list to container type
+            if not self.display_empty and len(value) == 0:
+                return None
             return [self.container.output(idx, value) for idx, val
                     in enumerate(value)]
+
         if value is None:
             return self.default
-        return [marshal(value, self.container.nested)]
+        return [marshal(value, self.container.nested, self.display_empty)]
 
 
 class String(Raw):
@@ -224,7 +228,7 @@ class Float(Raw):
 
     def format(self, value):
         try:
-            return float(value)
+            return repr(float(value))
         except ValueError as ve:
             raise MarshallingException(ve)
 
