@@ -406,7 +406,7 @@ class marshal_with(object):
 
     see :meth:`flask.ext.restful.marshal`
     """
-    def __init__(self, fields):
+    def __init__(self, fields, display_null=False):
         """:param fields: a dict of whose keys will make up the final
                           serialized response output"""
         self.fields = fields
