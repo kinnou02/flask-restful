@@ -356,14 +356,15 @@ class Resource(MethodView):
         return resp
 
 
-def marshal(data, fields, allow_null=True):
+def marshal(data, fields, display_null=True):
     """Takes raw data (in the form of a dict, list, object) and a dict of
     fields to output and filters the data based on those fields.
 
     :param fields: a dict of whose keys will make up the final serialized
                    response output
     :param data: the actual object(s) from which the fields are taken from
-
+    :param display_null: Whether to display or not key : value
+                   when value is null
 
     >>> from flask.ext.restful import fields, marshal
     >>> data = { 'a': 100, 'b': 'foo' }
@@ -379,13 +380,13 @@ def marshal(data, fields, allow_null=True):
         return cls
 
     if isinstance(data, (list, tuple)):
-        return [marshal(d, fields) for d in data]
+        return [marshal(d, fields, display_null) for d in data]
 
     items = []
     for k, v in fields.items():
-        tmp = marshal(data, v, allow_null) if isinstance(v, dict)\
+        tmp = marshal(data, v, display_null) if isinstance(v, dict)\
                                else make(v).output(k, data)
-        if allow_null or not(tmp is None):
+        if display_null or not(tmp is None):
             items.append((k, tmp))
     return OrderedDict(items)
 
@@ -405,11 +406,11 @@ class marshal_with(object):
 
     see :meth:`flask.ext.restful.marshal`
     """
-    def __init__(self, fields, allow_null=True):
+    def __init__(self, fields, display_null=True):
         """:param fields: a dict of whose keys will make up the final
                           serialized response output"""
         self.fields = fields
-        self.allow_null = allow_null
+        self.display_null = display_null
 
     def __call__(self, f):
         @wraps(f)
@@ -417,7 +418,7 @@ class marshal_with(object):
             resp = f(*args, **kwargs)
             if isinstance(resp, tuple):
                 data, code, headers = unpack(resp)
-                return marshal(data, self.fields, self.allow_null), code, headers
+                return marshal(data, self.fields, self.display_null), code, headers
             else:
-                return marshal(resp, self.fields, self.allow_null)
+                return marshal(resp, self.fields, self.display_null)
         return wrapper

@@ -117,18 +117,20 @@ class Nested(Raw):
     :param dict nested: The dictionary to nest
     :param bool allow_null: Whether to return None instead of a dictionary
         with null keys, if a nested dictionary has all-null keys
+    :param bool display: Params pass to marshal to display null object or not
     """
 
-    def __init__(self, nested, allow_null=False, **kwargs):
+    def __init__(self, nested, allow_null=False, display_null=True, **kwargs):
         self.nested = nested
         self.allow_null = allow_null
+        self.display_null = display_null
         super(Nested, self).__init__(**kwargs)
 
     def output(self, key, obj):
         value = get_value(key if self.attribute is None else self.attribute, obj)
         if self.allow_null and value is None:
             return None
-        return marshal(value, self.nested)
+        return marshal(value, self.nested, self.display_null)
 
 class List(Raw):
     def __init__(self, cls_or_instance, display_empty=True, **kwargs):
@@ -158,7 +160,7 @@ class List(Raw):
                     in enumerate(value)]
         if value is None:
             return self.default
-        return [marshal(value, self.container.nested)]
+        return [marshal(value, self.container.nested, self.display_empty)]
 
 
 class String(Raw):
@@ -225,7 +227,7 @@ class Float(Raw):
 
     def format(self, value):
         try:
-            return float(value)
+            return repr(float(value))
         except ValueError as ve:
             raise MarshallingException(ve)
 
