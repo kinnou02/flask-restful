@@ -128,13 +128,12 @@ class Nested(Raw):
         value = get_value(key if self.attribute is None else self.attribute, obj)
         if self.allow_null and value is None:
             return None
-
         return marshal(value, self.nested)
 
-
 class List(Raw):
-    def __init__(self, cls_or_instance, **kwargs):
+    def __init__(self, cls_or_instance, display_empty=True, **kwargs):
         super(List, self).__init__(**kwargs)
+        self.display_empty = display_empty
         if isinstance(cls_or_instance, type):
             if not issubclass(cls_or_instance, Raw):
                 raise MarshallingException("The type of the list elements "
@@ -153,12 +152,12 @@ class List(Raw):
         # we cannot really test for external dict behavior
         if is_indexable_but_not_string(value) and not isinstance(value, dict):
             # Convert all instances in typed list to container type
+            if not self.display_empty and len(value) == 0:
+                return None
             return [self.container.output(idx, value) for idx, val
                     in enumerate(value)]
-
         if value is None:
             return self.default
-
         return [marshal(value, self.container.nested)]
 
 
