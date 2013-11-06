@@ -157,9 +157,7 @@ class Api(object):
         if not hasattr(e, 'code') and self.app.propagate_exceptions:
             exc_type, exc_value, tb = sys.exc_info()
             if exc_value is e:
-                exc = exc_type(exc_value)
-                exc.__traceback__ = tb
-                raise exc
+                raise exc_type, exc_value, tb
             else:
                 raise e
 
