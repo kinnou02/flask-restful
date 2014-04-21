@@ -57,18 +57,22 @@ class Api(object):
     :param catch_all_404s: Use :meth:`handle_error`
         to handle 404 errors throughout your app
     :type catch_all_404s: bool
+    :param errors: A dictionary to define a custom response for each
+        exception or error raised during a request
+    :type errors: dict
 
     """
 
     def __init__(self, app=None, prefix='',
                  default_mediatype='application/json', decorators=None,
-                 catch_all_404s=False):
+                 catch_all_404s=False, errors=None):
         self.representations = dict(DEFAULT_REPRESENTATIONS)
         self.urls = {}
         self.prefix = prefix
         self.default_mediatype = default_mediatype
         self.decorators = decorators if decorators else []
         self.catch_all_404s = catch_all_404s
+        self.errors = errors or {}
 
         if app is not None:
             self.init_app(app)
@@ -189,6 +193,12 @@ class Api(object):
                         '] but did you mean ' + \
                         ' or '.join((rules[match]
                                      for match in close_matches)) + ' ?'
+
+        error_cls_name = type(e).__name__
+        if error_cls_name in self.errors:
+            custom_data = self.errors.get(error_cls_name, {})
+            code = custom_data.get('status', 500)
+            data.update(custom_data)
 
         resp = self.make_response(data, code)
 
